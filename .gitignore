@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+uploads/
+results/
+static/
+!weights_mobilenet_aesthetic_0.07.hdf5

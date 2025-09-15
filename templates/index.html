@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Best Image Recommender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            padding: 40px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .upload-area {
+            border: 3px dashed #4facfe;
+            border-radius: 15px;
+            padding: 60px 40px;
+            text-align: center;
+            background: linear-gradient(45deg, rgba(79, 172, 254, 0.05), rgba(0, 242, 254, 0.05));
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #00f2fe;
+            background: linear-gradient(45deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.1));
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #00f2fe;
+            background: linear-gradient(45deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.15));
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #4facfe;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .image-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-card.best {
+            border: 3px solid #4facfe;
+        }
+
+        .image-card.best::before {
+            /* content: '🏆 BEST IMAGE'; */
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            position: relative;
+        }
+
+        .image-info {
+            padding: 20px;
+        }
+
+        .image-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .image-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4facfe;
+            margin-bottom: 15px;
+        }
+
+        .image-details {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.success {
+            background: linear-gradient(45deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(45deg, #ff416c 0%, #ff4b2b 100%);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1>Best Image Recommender</h1>
+            <p>Advanced aesthetic quality analysis</p>
+        </div>
+
+        <div class="upload-section">
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drag & drop your images here</div>
+                <div class="upload-subtext">or click to browse files</div>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Choose Images
+                </button>
+
+                <button class="btn" onclick="analyzeImages()" id="analyzeBtn" style="display: none;">
+                    Analyze Images
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="loading" id="loadingSection">
+            <div class="loading-spinner"></div>
+            <h3>Analyzing Images...</h3>
+            <p>Using Neural Image Assessment for aesthetic scoring</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Analysis Results</h2>
+                <div id="resultsStats"
+                    style="background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 20px;">
+                </div>
+            </div>
+            <div class="image-grid" id="imageGrid"></div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="downloadBest()">Download Best Image</button>
+                <button class="btn" onclick="reset()">Analyze New Images</button>
+            </div>
+        </div>
+
+    </div>
+    <div id="notification" class="notification"></div>
+    <script>
+        let uploadedFiles = [];
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            uploadFiles(files);
+        }
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            uploadFiles(files);
+        }
+        async function uploadFiles(files) {
+            const formData = new FormData();
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            if (imageFiles.length === 0) {
+                showNotification('No valid image files selected!', 'error');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    uploadedFiles = result.files;
+                    analyzeBtn.style.display = 'inline-block';
+                    uploadArea.querySelector('.upload-text').textContent = `${result.files.length} images uploaded`;
+                    uploadArea.querySelector('.upload-subtext').textContent = 'Click "Analyze Images" to start';
+                    showNotification(result.message, 'success');
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Upload failed: ' + error.message, 'error');
+            }
+
+        }
+
+        async function analyzeImages() {
+            if (uploadedFiles.length === 0) return;
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            analyzeBtn.disabled = true;
+            try {
+                const response = await fetch('/analyze', { method: 'POST' });
+                const result = await response.json();
+                document.getElementById('loadingSection').style.display = 'none';
+                if (result.success) {
+                    displayResults(result);
+                    showNotification('Analysis completed successfully!', 'success');
+                } else {
+                    showNotification(result.message, 'error');
+                }
+
+            } catch (error) {
+                document.getElementById('loadingSection').style.display = 'none';
+                showNotification('Analysis failed: ' + error.message, 'error');
+            }
+
+            analyzeBtn.disabled = false;
+
+        }
+
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const imageGrid = document.getElementById('imageGrid');
+            const resultsStats = document.getElementById('resultsStats');
+            resultsSection.style.display = 'block';
+            resultsStats.textContent = `${data.total_images} images analyzed • Best score: ${data.best_image?.final_score || 'N/A'}`;
+            imageGrid.innerHTML = '';
+            data.results.forEach((result, index) => {
+                const card = createImageCard(result, index === 0);
+                imageGrid.appendChild(card);
+            });
+        }
+
+
+        function createImageCard(result, isBest = false) {
+            const card = document.createElement('div');
+            card.className = `image-card ${isBest ? 'best' : ''}`;
+            card.innerHTML = `
+                <div style="position: relative;">
+                    <img src="${result.image_url}" alt="${result.filename}" class="image-preview" loading="lazy">
+                </div>
+                <div class="image-info">
+                    <div class="image-name">${result.filename}</div>
+                    <div class="image-score">Score: ${result.final_score} / 10</div>
+                    <div class="image-details">
+                        ${result.width} × ${result.height} pixels • ${result.formatted_size}
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function downloadBest() {
+            window.open('/download_best', '_blank');
+            showNotification('Best image downloaded!', 'success');
+        }
+
+        function reset() {
+            uploadedFiles = [];
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            uploadArea.querySelector('.upload-text').textContent = 'Drag & drop your images here';
+            uploadArea.querySelector('.upload-subtext').textContent = 'or click to browse files';
+            fileInput.value = '';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+    </script>
+
+</body>
+
+</html>
