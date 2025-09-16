@@ -219,7 +219,7 @@ def select_best_image(filenames, scores):
 
 if __name__ == "__main__":
 
-    print("Open your browser:http://localhost:5000")
-    
+    # print("Open your browser:http://localhost:5000")
+    print("__Main__")
     # app.run(debug=True, host='0.0.0.0', port=5000)
     app.run(debug=False)
